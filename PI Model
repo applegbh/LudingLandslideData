@@ -1,0 +1,116 @@
+Algorithm 1: Integrate_Heim_with_Machine_Learning
+    Input: su_polygons, dem_data, landscape_data, ml_model
+    Output: trained_model
+    
+    // Module 1: Extract physical features from Heim energy line model (Section 3.1)
+    physical_features ← empty list
+    for each su in su_polygons do
+        // Calculate vertical height difference of SU (Formula 1)
+        travel_h ← Calculate_Travel_Height(su, dem_data)
+        // Calculate horizontal distance of SU (Section 2.3.2)
+        travel_dis ← Calculate_Travel_Distance(su)
+        // Calculate travel angle (α = arctan(ΔH / L), Formula 1)
+        travel_ang ← Arctangent(travel_h / travel_dis)
+        // Calculate material velocity via Heim model (Formulas 2-5)
+        velocity ← Calculate_Velocity(travel_h, travel_dis, su.slope)
+        // Append physical feature vector
+        physical_features.append([travel_h, travel_dis, travel_ang, velocity])
+    end for
+    
+    // Module 2: Merge physical features with landscape features (Section 3.2)
+    combined_features ← Merge_Features(physical_features, landscape_data)
+    
+    // Module 3: Train ML model with physical constraints (Section 3.3)
+    if ml_model == "PIETtree" then
+        // PIETtree: ETtree with physical penalty (Section 3.3.1)
+        trained_model ← Train_PIETree(combined_features, labels, physical_penalty)
+    else if ml_model == "PIXGB" then
+        // PIXGB: XGB with physical regularization (Section 3.3.2)
+        trained_model ← Train_PIXGB(combined_features, labels, physical_reg)
+    else if ml_model == "PIRF" then
+        // PIRF: RF with physical feature prioritization (Section 3.3.3)
+        trained_model ← Train_PIRF(combined_features, labels, physical_reg)
+    else if ml_model == "PIGAM" then
+        // PIGAM: GAM with physical smoothing terms (Section 3.3.4)
+        trained_model ← Train_PIGAM(combined_features, labels, physical_smooth)
+    end if
+    
+    return trained_model
+
+
+// Subfunction 1: Calculate SU vertical height difference
+function Calculate_Travel_Height(su, dem_data)
+    // Query max and min elevation within SU polygon
+    max_elev ← Get_Max_Elevation(su.polygon, dem_data)
+    min_elev ← Get_Min_Elevation(su.polygon, dem_data)
+    return max_elev - min_elev
+
+
+// Subfunction 2: Calculate SU horizontal travel distance
+function Calculate_Travel_Distance(su)
+    // Get highest point and farthest point in SU polygon
+    highest_point ← su.polygon.Get_Highest_Point()
+    farthest_point ← su.polygon.Get_Farthest_Point(highest_point)
+    return Euclidean_Distance(highest_point, farthest_point)
+
+// Subfunction 3: Calculate velocity via Heim energy line model
+function Calculate_Velocity(travel_h, travel_dis, slope)
+    // Implement Formulas 2-5: v = √(2k_i g), k_i from energy line model
+    alpha ← Arctangent(travel_h / travel_dis)  // Formula 1
+    Q_max ← travel_h  // Assume max height is Q_max
+    L_prime ← travel_dis  // Horizontal distance from top
+    k_i ← Q_max - L_prime * Tangent(alpha)  // Formulas 3-5
+    g ← 9.8  // Gravitational acceleration (m/s²)
+    return Sqrt(2 * g * k_i)
+
+// Subfunction 4: Merge physical and landscape features
+function Merge_Features(physical_features, landscape_data)
+    // Ensure spatial alignment of features
+    merged_data ← empty matrix
+    for i from 0 to len(physical_features)-1 do
+        // Get landscape features by spatial index
+        landscape_sample ← landscape_data.Get_Sample_by_Index(i)
+        // Concatenate physical and landscape features
+        merged_sample ← Concatenate(physical_features[i], landscape_sample)
+        merged_data.append(merged_sample)
+    end for
+    return merged_data
+    // Addresses spatial aggregation in Section 3.2
+
+
+// Subfunction 5: Train PIETree model
+function Train_PIETree(features, labels, physical_penalty)
+    // Build ETtree with physical penalty in split criterion
+    // Split_criterion = λ * Gini_impurity + (1-λ) * Physical_penalty
+    // λ = physical_penalty (optimized via cross-validation)
+    model ← ETtree()
+    model.fit(features, labels, physical_penalty=physical_penalty)
+    return model
+
+
+// Subfunction 6: Train PIXGB model
+function Train_PIXGB(features, labels, physical_reg)
+    // Build XGB with physical regularization term
+    // Updates feature weights with physical regularization
+    // physical_reg controls the strength of physical constraints
+    model ← XGB()
+    model.fit(features, labels, physical_reg=physical_reg)
+    return model
+
+
+// Subfunction 7: Train PIRF model
+function Train_PIRF(features, labels, physical_reg)
+    // Build RF with prioritized physical features
+    // physical_reg enhances the importance of physical variables
+    model ← RandomForest()
+    model.fit(features, labels, physical_reg=physical_reg)
+    return model
+
+
+// Subfunction 8: Train PIGAM model
+function Train_PIGAM(features, labels, physical_smooth)
+    // Build GAM with physical variables as smoothing terms
+    // physical_smooth controls the weight of physical smoothing functions
+    model ← GAM()
+    model.fit(features, labels, physical_smooth=physical_smooth)
+    return model
