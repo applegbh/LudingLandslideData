@@ -20,19 +20,14 @@ Algorithm 1: Integrate_Heim_with_Machine_Learning
     // Module 2: Merge physical features with landscape features (Section 3.2)
     combined_features ← Merge_Features(physical_features, landscape_data)
     
-    // Module 3: Train ML model with physical constraints (Section 3.3)
     if ml_model == "PIETtree" then
-        // PIETtree: ETtree with physical penalty (Section 3.3.1)
-        trained_model ← Train_PIETree(combined_features, labels, physical_penalty)
+        trained_model ← Train_PIETree(combined_features, labels)
     else if ml_model == "PIXGB" then
-        // PIXGB: XGB with physical regularization (Section 3.3.2)
-        trained_model ← Train_PIXGB(combined_features, labels, physical_reg)
+        trained_model ← Train_PIXGB(combined_features, labels)
     else if ml_model == "PIRF" then
-        // PIRF: RF with physical feature prioritization (Section 3.3.3)
-        trained_model ← Train_PIRF(combined_features, labels, physical_reg)
+        trained_model ← Train_PIRF(combined_features, labels)
     else if ml_model == "PIGAM" then
-        // PIGAM: GAM with physical smoothing terms (Section 3.3.4)
-        trained_model ← Train_PIGAM(combined_features, labels, physical_smooth)
+        trained_model ← Train_PIGAM(combined_features, labels)
     end if
     
     return trained_model
@@ -75,42 +70,3 @@ function Merge_Features(physical_features, landscape_data)
         merged_data.append(merged_sample)
     end for
     return merged_data
-    // Addresses spatial aggregation in Section 3.2
-
-
-// Subfunction 5: Train PIETree model
-function Train_PIETree(features, labels, physical_penalty)
-    // Build ETtree with physical penalty in split criterion
-    // Split_criterion = λ * Gini_impurity + (1-λ) * Physical_penalty
-    // λ = physical_penalty (optimized via cross-validation)
-    model ← ETtree()
-    model.fit(features, labels, physical_penalty=physical_penalty)
-    return model
-
-
-// Subfunction 6: Train PIXGB model
-function Train_PIXGB(features, labels, physical_reg)
-    // Build XGB with physical regularization term
-    // Updates feature weights with physical regularization
-    // physical_reg controls the strength of physical constraints
-    model ← XGB()
-    model.fit(features, labels, physical_reg=physical_reg)
-    return model
-
-
-// Subfunction 7: Train PIRF model
-function Train_PIRF(features, labels, physical_reg)
-    // Build RF with prioritized physical features
-    // physical_reg enhances the importance of physical variables
-    model ← RandomForest()
-    model.fit(features, labels, physical_reg=physical_reg)
-    return model
-
-
-// Subfunction 8: Train PIGAM model
-function Train_PIGAM(features, labels, physical_smooth)
-    // Build GAM with physical variables as smoothing terms
-    // physical_smooth controls the weight of physical smoothing functions
-    model ← GAM()
-    model.fit(features, labels, physical_smooth=physical_smooth)
-    return model
